@@ -1,4 +1,3 @@
-python
 # chess_assistant.py
 import sys
 import os
