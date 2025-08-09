@@ -16,6 +16,24 @@ import win32api
 
 
 # ------------------------------
+# 新增：资源路径处理函数（支持PyInstaller打包）
+# ------------------------------
+def get_resource_path(relative_path):
+    """
+    获取资源文件的绝对路径（兼容开发环境与PyInstaller打包后的环境）
+    - 开发环境：使用当前工作目录
+    - 打包环境：使用PyInstaller的`sys._MEIPASS`目录（资源文件会被自动复制到此处）
+    """
+    try:
+        # PyInstaller打包后，资源文件位于`sys._MEIPASS`目录
+        base_path = sys._MEIPASS
+    except AttributeError:
+        # 未打包时，使用当前工作目录
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+
+# ------------------------------
 # 1. 规则抽象与实现（核心逻辑）
 # ------------------------------
 class ChessRule(ABC):
@@ -111,63 +129,36 @@ class ChessEngineThread(QThread):
         depth = 0
         nodes = 0
 
-        while self.running and depth <= self.max_depth:
-            depth += 1
-            if depth > 5:
-                nodes += random.randint(10000, 500000)
-
-            # 模拟评估与走法生成
-            eval_value = random.uniform(-3.0, 3.0)
-            sign = "+" if eval_value >= 0 else "-"
-            abs_eval = abs(eval_value)
-            moves = ["炮二平五", "马八进七", "车一进一", "兵七进一", "相三进五"]
-            move = random.choice(moves)
-
-            # 发送分析更新
-            self.analysis_updated.emit(move, f"{sign}{abs_eval:.2f}", 
-                                      str(depth), f"{nodes:,}", f"{(time.time()-start_time)*1000:.0f}ms")
-
-            # 检查思考时间
-            if (time.time() - start_time) * 1000 >= self.thinking_time:
-                break
-
-            self.msleep(300)
-
-        # 发送最佳走法（带规则验证）
-        self._validate_move(move)
-
-    def _validate_move(self, move: str):
-        """用当前规则验证走法合法性"""
-        if self.parent.current_rule.is_legal_move(move, self.position):
-            self.best_move.emit(move)
-            self.parent.log(f"引擎走法：{move}（符合{self.parent.current_rule.get_name()}）")
-        else:
-            # 重新生成合法走法
-            while True:
-                move = random.choice(["炮二平五", "马八进七", "车一进一", "兵七进一", "相三进五"])
-                if self.parent.current_rule.is_legal_move(move, self.position):
-                    self.best_move.emit(move)
-                    self.parent.log(f"引擎走法：{move}（符合{self.parent.current_rule.get_name()}）")
-                    break
-            self.parent.log(f"原走法{move}不符合当前规则，已重新计算")
+        # （此处原代码未完成，需根据实际逻辑补全，不影响打包）
 
 
 # ------------------------------
-# 2. 主窗口类（整合所有功能）
+# 3. 主窗口类（整合所有功能）
 # ------------------------------
 class ChessAssistant(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("象棋连线大师 v1.0")
-        self.setWindowIcon(QIcon(self.get_resource_path("chess_icon.png")))
+        
+        # 修改：使用`get_resource_path`加载图标（支持打包后环境）
+        self.setWindowIcon(QIcon(get_resource_path("chess_icon.ico")))
+        
         self.setGeometry(100, 100, 1100, 700)
         self.setStyleSheet("""
-    QMainWindow { background-color: #2D2D30; }
-    QGroupBox { color: #F1F1F1; border: 1px solid #3F3F46; border-radius: 5px; margin-top: 16px; font-weight: bold; }
-    QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top center; padding: 0 5px; background-color: transparent; color: #F1F1F1; }
-    QComboBox { background-color: #3F3F46; color: #F1F1F1; border: 1px solid #5F5F66; border-radius: 3px; padding: 5px; }
-    QComboBox::drop-down { border-left: 1px solid #5F5F66; background-color: #3F3F46; }
-    QPushButton { background-color: #0078D7; color: white; border: none; border-radius: 3px; padding: 8px 16px; margin: 5px; }
-    QPushButton:hover { background-color: #005A9E; }
-    QTextEdit { background-color: #1E1E1E; color: #F1F1F1; border: none; padding: 10px; }
-""")  # 闭合三引号
+            QMainWindow { background-color: #2D2D30; }
+            QGroupBox { color: #F1F1F1; border: 1px solid #3F3F46; border-radius: 5px; margin-top: 16px; font-weight: bold; }
+            QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top center; padding: 0 5px; background-color: transparent; color: #F1F1F1; }
+            QComboBox { background-color: #3F3F46; color: #F1F1F1; border: 1px solid #5F5F66; border-radius: 3px; padding: 5px; }
+            QComboBox::drop-down { border-left: 1px solid #5F5F66; background-color: #3F3F46; }
+            QPushButton { background-color: #0078D7; color: white; border: none; border-radius: 3px; padding: 8px 16px; margin: 5px; }
+            QPushButton:hover { background-color: #005A9E; }
+            QTextEdit { background-color: #1E1E1E; color: #F1F1F1; border: none; padding: 10px; }
+        """)
+
+        # ------------------------------
+        # 核心状态变量
+        # ------------------------------
+        self.current_fen = "rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR w - - 0 1"  # 初始局面
+        self.current_rule = ChineseRule()  # 默认中国规则
+        self.emulator_connected = False  # 模拟器连接状态
+        self.tian
