@@ -162,6 +162,12 @@ class ChessAssistant(QMainWindow):
         self.setWindowIcon(QIcon(self.get_resource_path("chess_icon.png")))
         self.setGeometry(100, 100, 1100, 700)
         self.setStyleSheet("""
-            QMainWindow { background-color: #2D2D30; }
-            QGroupBox { color: #F1F1F1; border: 1px solid #3F3F46; border-radius: 5px; margin-top: 16px; font-weight: bold; }
-            QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top 
+    QMainWindow { background-color: #2D2D30; }
+    QGroupBox { color: #F1F1F1; border: 1px solid #3F3F46; border-radius: 5px; margin-top: 16px; font-weight: bold; }
+    QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top center; padding: 0 5px; background-color: transparent; color: #F1F1F1; }
+    QComboBox { background-color: #3F3F46; color: #F1F1F1; border: 1px solid #5F5F66; border-radius: 3px; padding: 5px; }
+    QComboBox::drop-down { border-left: 1px solid #5F5F66; background-color: #3F3F46; }
+    QPushButton { background-color: #0078D7; color: white; border: none; border-radius: 3px; padding: 8px 16px; margin: 5px; }
+    QPushButton:hover { background-color: #005A9E; }
+    QTextEdit { background-color: #1E1E1E; color: #F1F1F1; border: none; padding: 10px; }
+""")  # 闭合三引号
