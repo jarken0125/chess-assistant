@@ -14,8 +14,7 @@ uses: actions/setup-python@v5
 with:
 python-version: '3.10'  # 可调整为你的Python版本（如3.9、3.11）
 
-# 安装依赖（清华镜像加速，解决国内下载慢）
-- name: Install dependencies
+# 安装依赖（清华镜像加速，解决国内下载慢）- name: Install dependencies
 run: |
 pip install -i https://pypi.tuna.tsinghua.edu.cn/simple pyinstaller pyqt5
 
