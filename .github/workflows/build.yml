@@ -2,30 +2,38 @@ name: Build EXE
 on: [push]
 
 jobs:
-  build:  # 一级任务，缩进2个空格（相对于jobs:）
-    runs-on: windows-latest  # 任务属性，缩进2个空格
-    steps:  # 任务步骤列表，缩进2个空格
-      # 1. 拉取仓库代码（最新版v4）
-      - uses: actions/checkout@v4  # 步骤1：用-开头，无额外缩进（相对于steps:）
+  build:
+    runs-on: windows-latest
+    steps:
+      # 1. 拉取仓库代码
+      - uses: actions/checkout@v4
 
-      # 2. 配置Python环境（最新版v5）
-      - name: Set up Python  # 步骤2：名称，-开头
-        uses: actions/setup-python@v5  # 步骤属性：缩进2个空格（相对于- name:）
-        with:  # 步骤参数：缩进2个空格（相对于uses:）
-          python-version: '3.10'  # 参数值：缩进2个空格（相对于with:）
+      # 2. 配置Python环境
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-      # 3. 安装依赖（清华镜像加速）
-      - name: Install dependencies  # 步骤3：名称，-开头
-        run: |  # 步骤命令：缩进2个空格（相对于- name:）
-          pip install -i https://pypi.tuna.tsinghua.edu.cn/simple pyinstaller pyqt5  # 命令行：缩进2个空格（相对于run: |）
+      # 3. 安装依赖（添加opencv-python-headless）
+      - name: Install dependencies
+        run: |
+          pip install -i https://pypi.tuna.tsinghua.edu.cn/simple pyinstaller pyqt5 opencv-python-headless numpy pywin32
 
-      # 4. 打包EXE（生成可执行文件）
-      - name: Build EXE  # 步骤4：名称，-开头
-        run: |  # 步骤命令：缩进2个空格
-          pyinstaller --onefile --windowed --name ChessAssistant --add-data "chinese_chess_board.png;." chess_assistant.py  # 命令行：缩进2个空格
+      # 4. 打包EXE（添加--hidden-import参数）
+      - name: Build EXE
+        run: |
+          pyinstaller --onefile --windowed `
+            --name ChessAssistant `
+            --hidden-import cv2 `
+            --hidden-import numpy `
+            --add-data "chinese_chess_board.png;." `
+            chess_assistant.py
+          
+          # 验证打包结果
+          dir dist
 
-      # 5. 上传打包结果（最新版v4）
-      - uses: actions/upload-artifact@v4  # 步骤5：用-开头
-        with:  # 步骤参数：缩进2个空格
-          name: chess-assistant  #  artifacts名称：缩进2个空格
-          path: dist/  # 输出目录：缩进2个空格
+      # 5. 上传打包结果
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chess-assistant
+          path: dist/
